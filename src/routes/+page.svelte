@@ -32,7 +32,7 @@
 		<History class="mr-2 h-4 w-4" />
 		History
 	</Button> -->
-	<h1 class="text-3xl font-bold md:text-5xl">Medication Safety Scanner</h1>
+	<h1 class="text-3xl font-bold md:text-5xl">PharmaCheck</h1>
 	<h2 class="max-w-[750px] text-lg text-muted-foreground sm:text-xl">
 		Easily scan your medicine to avoid dangerous drug interactions and allergies
 	</h2>
