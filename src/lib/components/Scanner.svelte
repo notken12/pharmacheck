@@ -6,6 +6,7 @@
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { userData } from '$lib/stores';
 	import { saveUserData, type Ingredient, type MedicineInfo } from '$lib';
+	import * as Accordion from '$lib/components/ui/accordion';
 
 	let scanImage = () => {
 		camera.takePicture();
@@ -36,6 +37,10 @@
 		);
 		medicineInfoResponse = await serverResponse.json();
 		medicineInfoDialogOpen = true;
+	};
+
+	const analyzeCurrentMedicine = async () => {
+		interactionsDialogOpen = true;
 		const ingredients: Ingredient[] = [];
 
 		for (const ingredient of medicineInfoResponse.ingredients) {
@@ -105,7 +110,10 @@
 		}
 
 		console.log(interactions);
+		currentInteractions = interactions;
 	};
+
+	let currentInteractions: Interaction[] | null = null;
 
 	type Interaction = {
 		severity: string;
@@ -129,6 +137,7 @@
 	let trigger: string;
 
 	let medicineInfoDialogOpen = false;
+	let interactionsDialogOpen = false;
 
 	let inputFiles: FileList;
 </script>
@@ -156,6 +165,49 @@
 				<p>
 					Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
 				</p>
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action on:click={analyzeCurrentMedicine}>Continue</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
+
+<AlertDialog.Root open={interactionsDialogOpen}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Medicine Info</AlertDialog.Title>
+			<AlertDialog.Description>
+				<p>
+					Name: {medicineInfoResponse?.name || 'None'}
+				</p>
+				<p>
+					Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
+				</p>
+				{#if currentInteractions != null}
+					<h2>Interactions</h2>
+					<Accordion.Root class="w-full sm:max-w-[70%]">
+						{#each currentInteractions as interaction}
+							<Accordion.Item value="item-1">
+								<Accordion.Trigger>
+									<span>Severity: {interaction.severity}</span>
+									<span>{interaction.description}</span>
+								</Accordion.Trigger>
+								<Accordion.Content>
+									{#each interaction.pairs as pair}
+										<p>
+											<b class="capitalize">{pair[0].name}</b> ⇔
+											<b class="capitalize">{pair[1].name}</b>
+										</p>
+									{/each}
+								</Accordion.Content>
+							</Accordion.Item>
+						{/each}
+					</Accordion.Root>
+				{:else}
+					<p>Analyzing interactions...</p>
+				{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
