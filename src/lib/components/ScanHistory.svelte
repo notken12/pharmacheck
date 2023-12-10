@@ -13,11 +13,17 @@
 
 <div class="flex flex-col gap-4">
 	{#if $userData}
-		<h2 class="text-2xl font-bold">Scan history</h2>
+		{#if $userData.scanHistory.length > 0}
+			<h2 class="text-2xl font-bold">Recently scanned</h2>
+		{/if}
 		{#each $userData.scanHistory as scanRecord}
 			<Card.Root>
 				<Card.Header>
-					<Card.Title>{scanRecord.medicineInfo.name}</Card.Title>
+					<Card.Title
+						>{scanRecord.medicineInfo.name} ({scanRecord.medicineInfo.ingredients
+							.map((a) => a.name)
+							.join(', ')})</Card.Title
+					>
 					<Card.Description
 						>Scanned at {new Date(scanRecord.timestamp).toISOString()}</Card.Description
 					>
