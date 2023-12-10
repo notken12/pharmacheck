@@ -64,6 +64,17 @@
 
 		const ingredientIds = getPastIngredientIds();
 		console.log(ingredientIds);
+
+		ingredientIds.join(' ');
+		const interaction = await fetch(
+			'https://rxnav.nlm.nih.gov/REST/interaction/list.xml?' + 
+				new URLSearchParams({format : '.json', rxcuis : ingredientIds})
+		);
+		const resObject = await interaction.json();
+
+		for(const interationTypeGroup of resObject.fullInteractionTypeGroup) {
+			for(const interactionType of interactionTypeGroup.full)
+		}
 	};
 
 	let getPastIngredientIds = () => {
