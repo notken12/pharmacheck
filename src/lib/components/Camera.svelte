@@ -76,7 +76,7 @@
 	<canvas bind:this={pictureResultEl} class="hidden" />
 </div>
 
-<p>{videoWidth} x {videoHeight}</p>
+<!-- <p>{videoWidth} x {videoHeight}</p> -->
 
 <style>
 	.videoContainer {

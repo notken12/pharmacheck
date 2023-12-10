@@ -27,11 +27,11 @@
 	});
 </script>
 
-<main class="flex p-8 center flex-col items-center">
-	<Button>
+<main class="flex p-8 center flex-col items-center gap-4">
+	<!-- <Button>
 		<History class="mr-2 h-4 w-4" />
 		History
-	</Button>
+	</Button> -->
 	<h1 class="text-3xl font-bold md:text-5xl">Medication Scanner</h1>
 	<p>Scan your medication here</p>
 	<Scanner></Scanner>

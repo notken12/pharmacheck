@@ -9,6 +9,7 @@
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { each } from 'store';
 	import * as Card from '$lib/components/ui/card';
+	import { ThumbsUp, X } from 'lucide-svelte';
 
 	let scanImage = () => {
 		camera.takePicture();
@@ -43,12 +44,20 @@
 		medicineInfoDialogOpen = true;
 	};
 
-	const analyzeCurrentMedicine = async () => {
-		if (!medicineInfoResponse) return;
+	let currentMedicineInfo: MedicineInfo;
+
+	const analyzeCurrentMedicine = async (
+		medicineInfoRes: {
+			name: string;
+			ingredients: string[];
+		} | null
+	) => {
+		medicineInfoDialogOpen = false;
+		if (!medicineInfoRes) return;
 		interactionsDialogOpen = true;
 		const ingredients: Ingredient[] = [];
 
-		for (const ingredient of medicineInfoResponse.ingredients) {
+		for (const ingredient of medicineInfoRes.ingredients) {
 			const response = await fetch(
 				'https://rxnav.nlm.nih.gov/REST/rxcui.json?' +
 					new URLSearchParams({ name: ingredient, search: '2' })
@@ -64,18 +73,12 @@
 		}
 
 		const medicineInfo: MedicineInfo = {
-			name: medicineInfoResponse.name,
+			name: medicineInfoRes.name,
 			ingredients: ingredients
 		};
+		currentMedicineInfo = medicineInfo;
 
 		console.log(medicineInfo);
-
-		$userData.scanHistory.push({
-			timestamp: new Date().getTime(),
-			medicineInfo: medicineInfo
-		});
-		userData.set($userData);
-		saveUserData($userData);
 
 		const ingredientIds = getPastIngredientIds().join(' ');
 		console.log(ingredientIds);
@@ -127,6 +130,7 @@
 			return false;
 		});
 		interactionsByMedicine = new Map();
+		let severe = false;
 		for (const interaction of currentInteractions) {
 			for (const pair of interaction.pairs) {
 				for (const ingredient of pair) {
@@ -135,9 +139,12 @@
 					)?.medicineInfo;
 					if (!medicine || medicine == medicineInfo) continue;
 					let interactions = interactionsByMedicine.get(medicine);
+					if (interaction.severity.toLowerCase() == 'high') severe = true;
 					if (interactions != null) {
 						interactions.list.add(interaction);
-						if (interaction.severity.toLowerCase() == 'high') interactions.severe = true;
+						if (interaction.severity.toLowerCase() == 'high') {
+							interactions.severe = true;
+						}
 					} else {
 						interactionsByMedicine.set(medicine, {
 							severe: interaction.severity.toLowerCase() == 'high',
@@ -146,6 +153,14 @@
 					}
 				}
 			}
+		}
+
+		if (!severe) {
+			$userData.scanHistory.push({
+				timestamp: new Date().getTime(),
+				medicineInfo: medicineInfo
+			});
+			userData.set($userData);
 		}
 	};
 
@@ -180,6 +195,19 @@
 	let interactionsDialogOpen = false;
 
 	let inputFiles: FileList;
+	let removingDrugs = false;
+
+	const deleteRecord = (medicine: MedicineInfo) => {
+		$userData.scanHistory.splice(
+			$userData.scanHistory.findIndex((a) => a.medicineInfo == medicine),
+			1
+		);
+		userData.set($userData);
+		if (interactionsByMedicine?.get(medicine)) {
+			interactionsByMedicine.delete(medicine);
+			interactionsByMedicine = interactionsByMedicine;
+		}
+	};
 
 	$: hasSevereInteraction =
 		!interactionsByMedicine || [...interactionsByMedicine].find(([k, v]) => v.severe) != null;
@@ -187,7 +215,9 @@
 	$: {
 		if (!medicineInfoDialogOpen) {
 			resultText = '';
-			medicineInfoResponse = null;
+		}
+		if (!interactionsDialogOpen) {
+			removingDrugs = false;
 		}
 	}
 </script>
@@ -221,14 +251,19 @@
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action on:click={analyzeCurrentMedicine}>Continue</AlertDialog.Action>
+			<AlertDialog.Cancel on:click={() => (medicineInfoDialogOpen = false)}
+				>Cancel</AlertDialog.Cancel
+			>
+			<AlertDialog.Action
+				disabled={!medicineInfoResponse}
+				on:click={() => analyzeCurrentMedicine(medicineInfoResponse)}>Continue</AlertDialog.Action
+			>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
 
 <AlertDialog.Root open={interactionsDialogOpen}>
-	<AlertDialog.Content>
+	<AlertDialog.Content class="max-h-screen overflow-y-auto">
 		<AlertDialog.Header>
 			<AlertDialog.Title>Medicine Info</AlertDialog.Title>
 			<AlertDialog.Description>
@@ -243,8 +278,15 @@
 					<div class="flex flex-col gap-4">
 						{#each [...interactionsByMedicine] as [medicineInfo, interactions]}
 							<Card.Root>
-								<Card.Header>
-									<Card.Title>{medicineInfo.name}</Card.Title>
+								<Card.Header class="flex flex-row justify-between">
+									<span class="text-2xl">{medicineInfo.name}</span>
+									{#if removingDrugs}
+										<Button
+											variant="destructive"
+											class="p-[4px] h-[24px]"
+											on:click={() => deleteRecord(medicineInfo)}><X class="h-4 w-4"></X></Button
+										>
+									{/if}
 								</Card.Header>
 								<Card.Content>
 									<Accordion.Root class="w-full">
@@ -282,6 +324,13 @@
 								deleting all medicine with severe interactions.
 							</p>
 						{/if}
+						{#if interactionsByMedicine && interactionsByMedicine.size == 0}
+							<div class="flex flex-row gap-1">
+								<ThumbsUp class="h-4 w-4 inline"></ThumbsUp><b>
+									No interations with recently scanned medicine.</b
+								>
+							</div>
+						{/if}
 					</div>
 				{:else}
 					<p>Analyzing interactions...</p>
@@ -289,8 +338,17 @@
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-			<Button>Remove items</Button>
+			<AlertDialog.Cancel
+				on:click={() => {
+					interactionsDialogOpen = false;
+					deleteRecord(currentMedicineInfo);
+				}}>Cancel</AlertDialog.Cancel
+			>
+			{#if interactionsByMedicine && interactionsByMedicine.size > 0}
+				<Button disabled={removingDrugs} on:click={() => (removingDrugs = true)}
+					>Remove items</Button
+				>
+			{/if}
 			<AlertDialog.Action disabled={hasSevereInteraction}>Continue</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
