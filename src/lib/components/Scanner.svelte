@@ -9,7 +9,8 @@
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { each } from 'store';
 	import * as Card from '$lib/components/ui/card';
-	import { AlertCircle, ThumbsUp, X } from 'lucide-svelte';
+	import { AlertCircle, ScanText, ThumbsUp, X } from 'lucide-svelte';
+	import { Input } from './ui/input';
 
 	let scanImage = () => {
 		medicineInfoResponse = null;
@@ -240,7 +241,7 @@
 />
 
 <Camera bind:this={camera}></Camera>
-<Button on:click={scanImage}>Scan</Button>
+<Button on:click={scanImage}><ScanText class="w-4 h-4 mr-2"></ScanText>Scan</Button>
 <AlertDialog.Root open={medicineInfoDialogOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
@@ -259,7 +260,24 @@
 								<AlertCircle class="w-4 h-4 inline"></AlertCircle>
 								We strongly recommend recording your allergies to enable allergy checking for all scans.
 							</p>
-							<Button>Record allergies</Button>
+							<AlertDialog.Root>
+								<AlertDialog.Trigger asChild let:builder>
+									<Button builders={[builder]}>Record allergies</Button>
+								</AlertDialog.Trigger>
+								<AlertDialog.Content>
+									<AlertDialog.Header>
+										<AlertDialog.Title>My allergies</AlertDialog.Title>
+										<AlertDialog.Description class="flex gap-2">
+											<Input type="text" placeholder="Allergen" class="max-w-xs" />
+											<Button>Add</Button>
+										</AlertDialog.Description>
+									</AlertDialog.Header>
+									<AlertDialog.Footer>
+										<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
+										<AlertDialog.Action>Save</AlertDialog.Action>
+									</AlertDialog.Footer>
+								</AlertDialog.Content>
+							</AlertDialog.Root>
 						</div>
 					{/if}
 				{:else if resultText.length > 0}

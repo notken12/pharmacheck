@@ -29,6 +29,7 @@
 	const videoUpdated = (e: Event) => {
 		videoWidth = videoEl.videoWidth;
 		videoHeight = videoEl.videoHeight;
+		videoEl.play();
 	};
 
 	let pictureTaken = false;
@@ -70,7 +71,6 @@
 		on:loadedmetadata={videoUpdated}
 		muted
 		playsinline
-		autoplay
 	></video>
 
 	<canvas bind:this={pictureResultEl} class="hidden" />

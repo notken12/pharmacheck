@@ -33,7 +33,10 @@
 		History
 	</Button> -->
 	<h1 class="text-3xl font-bold md:text-5xl">Medication Safety Scanner</h1>
-	<p>Easily scan your medicine to avoid dangerous drug interactions and allergies</p>
+	<h2 class="max-w-[750px] text-lg text-muted-foreground sm:text-xl">
+		Easily scan your medicine to avoid dangerous drug interactions and allergies
+	</h2>
+	<p class="text-muted-foreground">Made by Ken Z. and Benja H. at 📍Hack the Nest</p>
 	<Scanner></Scanner>
 	<ScanHistory></ScanHistory>
 </main>
