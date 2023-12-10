@@ -12,6 +12,8 @@
 	import { ThumbsUp, X } from 'lucide-svelte';
 
 	let scanImage = () => {
+		medicineInfoResponse = null;
+		resultText = '';
 		camera.takePicture();
 		const src = camera.getImageData();
 		const img = camera.getCanvas().toDataURL('image/png');
@@ -20,6 +22,8 @@
 	};
 
 	let scanFileInputImage = () => {
+		medicineInfoResponse = null;
+		resultText = '';
 		recognizeText(inputFiles[0]);
 	};
 
@@ -80,12 +84,14 @@
 
 		console.log(medicineInfo);
 
-		const ingredientIds = getPastIngredientIds().join(' ');
-		console.log(ingredientIds);
+		const ingredientIds = getPastIngredientIds();
+		for (const ingredient of medicineInfo.ingredients) {
+			ingredientIds.push(ingredient.rxNormId);
+		}
 
 		const interaction = await fetch(
 			'https://rxnav.nlm.nih.gov/REST/interaction/list.json?' +
-				new URLSearchParams({ rxcuis: ingredientIds })
+				new URLSearchParams({ rxcuis: ingredientIds.join(' ') })
 		);
 		const resObject = await interaction.json();
 		const interactions: Interaction[] = [];
