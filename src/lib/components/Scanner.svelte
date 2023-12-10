@@ -21,6 +21,12 @@
 			{ imageColor: true, imageGrey: true, imageBinary: true }
 		);
 		resultText = result.data.text;
+
+		const serverResponse = await fetch(
+			'/medicine-info?' + new URLSearchParams({ text: result.data.text })
+		);
+		const medicineInfo = await serverResponse.json();
+		console.log(medicineInfo);
 	};
 
 	let resultText = '';
