@@ -9,7 +9,7 @@
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { each } from 'store';
 	import * as Card from '$lib/components/ui/card';
-	import { ThumbsUp, X } from 'lucide-svelte';
+	import { AlertCircle, ThumbsUp, X } from 'lucide-svelte';
 
 	let scanImage = () => {
 		medicineInfoResponse = null;
@@ -22,9 +22,12 @@
 	};
 
 	let scanFileInputImage = () => {
-		medicineInfoResponse = null;
-		resultText = '';
-		recognizeText(inputFiles[0]);
+		if (inputFiles.length > 0) {
+			medicineInfoResponse = null;
+			resultText = '';
+			recognizeText(inputFiles[0]);
+			inputEl.value = '';
+		}
 	};
 
 	let camera: Camera;
@@ -45,7 +48,6 @@
 			'/medicine-info?' + new URLSearchParams({ text: result.data.text })
 		);
 		medicineInfoResponse = await serverResponse.json();
-		medicineInfoDialogOpen = true;
 	};
 
 	let currentMedicineInfo: MedicineInfo;
@@ -202,6 +204,7 @@
 
 	let inputFiles: FileList;
 	let removingDrugs = false;
+	let inputEl: HTMLInputElement;
 
 	const deleteRecord = (medicine: MedicineInfo) => {
 		$userData.scanHistory.splice(
@@ -229,6 +232,7 @@
 </script>
 
 <input
+	bind:this={inputEl}
 	bind:files={inputFiles}
 	on:change={scanFileInputImage}
 	type="file"
@@ -241,7 +245,7 @@
 	<AlertDialog.Content>
 		<AlertDialog.Header>
 			<AlertDialog.Title>Medicine Info</AlertDialog.Title>
-			<AlertDialog.Description>
+			<AlertDialog.Description class="flex flex-col gap-2">
 				{#if medicineInfoResponse}
 					<p>
 						Name: {medicineInfoResponse?.name || 'None'}
@@ -249,6 +253,15 @@
 					<p>
 						Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
 					</p>
+					{#if $userData.scanHistory.length == 0}
+						<div class="flex flex-col gap-2 border-slate-500 rounded border-[1px] p-4">
+							<p>
+								<AlertCircle class="w-4 h-4 inline"></AlertCircle>
+								We strongly recommend recording your allergies to enable allergy checking for all scans.
+							</p>
+							<Button>Record allergies</Button>
+						</div>
+					{/if}
 				{:else if resultText.length > 0}
 					<p>Analyzing text to find name and ingredients...</p>
 				{:else}
