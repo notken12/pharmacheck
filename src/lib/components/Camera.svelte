@@ -21,7 +21,9 @@
 	onMount(async () => {
 		let stream: MediaStream = await navigator.mediaDevices.getUserMedia(constraints);
 		videoEl.srcObject = stream;
-		canvasContext = pictureResultEl.getContext('2d') as CanvasRenderingContext2D;
+		canvasContext = pictureResultEl.getContext('2d', {
+			willReadFrequently: true
+		}) as CanvasRenderingContext2D;
 	});
 
 	const videoUpdated = (e: Event) => {
@@ -52,6 +54,11 @@
 
 	export const getCanvas = () => {
 		return pictureResultEl;
+	};
+
+	export const reset = () => {
+		pictureTaken = false;
+		canvasContext.clearRect(0, 0, pictureResultEl.width, pictureResultEl.height);
 	};
 </script>
 

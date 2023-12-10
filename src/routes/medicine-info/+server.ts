@@ -15,14 +15,14 @@ export async function GET(reqEvent) {
 			},
 			{
 				role: 'user',
-				content: `What is the name of this medicine and the active ingredients? Output JSON with fields "name" and "ingredients". Label text: "${drugLabelText}"`
+				content: `What is the name of this medicine and the active ingredients? Output JSON with fields "name": string and "ingredients": array of strings. Label text: "${drugLabelText}"`
 			}
 		],
 		model: 'gpt-3.5-turbo-1106',
 		response_format: { type: 'json_object' }
 	});
 	const medicineInfoJson = completion.choices[0].message.content;
-	if (medicineInfoJson == null) return;
+	if (medicineInfoJson == null) throw error(500);
 	const medicineInfo = JSON.parse(medicineInfoJson);
 
 	return json(medicineInfo);
