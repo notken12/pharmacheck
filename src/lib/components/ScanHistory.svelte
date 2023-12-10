@@ -9,6 +9,30 @@
 		$userData.scanHistory.splice($userData.scanHistory.indexOf(scanRecord), 1);
 		userData.set($userData);
 	};
+
+	const timeSince = (date: Date) => {
+		var seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+
+		var interval = seconds / 31536000;
+
+		interval = seconds / 2592000;
+		interval = seconds / 86400;
+		if (interval >= 2) {
+			return ' on ' + date.toLocaleDateString();
+		}
+		if (interval > 1) {
+			return Math.floor(interval) + ' days ago';
+		}
+		interval = seconds / 3600;
+		if (interval > 1) {
+			return Math.floor(interval) + ' hours ago';
+		}
+		interval = seconds / 60;
+		if (interval > 1) {
+			return Math.floor(interval) + ' minutes ago';
+		}
+		return 'just now';
+	};
 </script>
 
 <div class="flex flex-col gap-4">
@@ -25,9 +49,7 @@
 								.map((a) => a.name)
 								.join(', ')})</Card.Title
 						>
-						<Card.Description
-							>Scanned at {new Date(scanRecord.timestamp).toISOString()}</Card.Description
-						>
+						<Card.Description>Scanned {timeSince(new Date(scanRecord.timestamp))}</Card.Description>
 					</div>
 					<Button
 						style="margin:0;"

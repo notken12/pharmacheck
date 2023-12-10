@@ -5,12 +5,13 @@
 	import { Button } from '$lib/components/ui/button';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { userData } from '$lib/stores';
-	import { saveUserData, type Ingredient, type MedicineInfo } from '$lib';
+	import type { Ingredient, MedicineInfo } from '$lib';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import { each } from 'store';
 	import * as Card from '$lib/components/ui/card';
 	import { AlertCircle, ScanText, ThumbsUp, X } from 'lucide-svelte';
 	import { Input } from './ui/input';
+	import { Skeleton } from './ui/skeleton';
 
 	let scanImage = () => {
 		medicineInfoResponse = null;
