@@ -7,6 +7,8 @@
 	import { userData } from '$lib/stores';
 	import { saveUserData, type Ingredient, type MedicineInfo } from '$lib';
 	import * as Accordion from '$lib/components/ui/accordion';
+	import { each } from 'store';
+	import * as Card from '$lib/components/ui/card';
 
 	let scanImage = () => {
 		camera.takePicture();
@@ -21,9 +23,11 @@
 	};
 
 	let camera: Camera;
-	let medicineInfoResponse: { name: string; ingredients: string[] };
+	let medicineInfoResponse: { name: string; ingredients: string[] } | null;
 
 	let recognizeText = async (img: Tesseract.ImageLike) => {
+		medicineInfoDialogOpen = true;
+
 		let worker = await Tesseract.createWorker();
 		let result = await worker.recognize(
 			img,
@@ -40,6 +44,7 @@
 	};
 
 	const analyzeCurrentMedicine = async () => {
+		if (!medicineInfoResponse) return;
 		interactionsDialogOpen = true;
 		const ingredients: Ingredient[] = [];
 
@@ -121,9 +126,34 @@
 			}
 			return false;
 		});
+		interactionsByMedicine = new Map();
+		for (const interaction of currentInteractions) {
+			for (const pair of interaction.pairs) {
+				for (const ingredient of pair) {
+					const medicine = $userData.scanHistory.find((a) =>
+						a.medicineInfo.ingredients.find((ing) => ing.rxNormId == ingredient.rxNormId)
+					)?.medicineInfo;
+					if (!medicine || medicine == medicineInfo) continue;
+					let interactions = interactionsByMedicine.get(medicine);
+					if (interactions != null) {
+						interactions.list.add(interaction);
+						if (interaction.severity.toLowerCase() == 'high') interactions.severe = true;
+					} else {
+						interactionsByMedicine.set(medicine, {
+							severe: interaction.severity.toLowerCase() == 'high',
+							list: new Set([interaction])
+						});
+					}
+				}
+			}
+		}
 	};
 
 	let currentInteractions: Interaction[] | null = null;
+	let interactionsByMedicine: Map<
+		MedicineInfo,
+		{ severe: boolean; list: Set<Interaction> }
+	> | null = null;
 
 	type Interaction = {
 		severity: string;
@@ -150,6 +180,16 @@
 	let interactionsDialogOpen = false;
 
 	let inputFiles: FileList;
+
+	$: hasSevereInteraction =
+		!interactionsByMedicine || [...interactionsByMedicine].find(([k, v]) => v.severe) != null;
+
+	$: {
+		if (!medicineInfoDialogOpen) {
+			resultText = '';
+			medicineInfoResponse = null;
+		}
+	}
 </script>
 
 <input
@@ -161,20 +201,23 @@
 
 <Camera bind:this={camera}></Camera>
 <Button on:click={scanImage}>Scan</Button>
-<p>{resultText}</p>
-<p></p>
-
 <AlertDialog.Root open={medicineInfoDialogOpen}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
 			<AlertDialog.Title>Medicine Info</AlertDialog.Title>
 			<AlertDialog.Description>
-				<p>
-					Name: {medicineInfoResponse?.name || 'None'}
-				</p>
-				<p>
-					Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
-				</p>
+				{#if medicineInfoResponse}
+					<p>
+						Name: {medicineInfoResponse?.name || 'None'}
+					</p>
+					<p>
+						Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
+					</p>
+				{:else if resultText.length > 0}
+					<p>Analyzing text to find name and ingredients...</p>
+				{:else}
+					<p>Reading text from image...</p>
+				{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
@@ -193,28 +236,53 @@
 					Name: {medicineInfoResponse?.name || 'None'}
 				</p>
 				<p>
-					Active ingredients: {medicineInfoResponse?.ingredients || 'None'}
+					Active ingredients: <b>{medicineInfoResponse?.ingredients || 'None'}</b>
 				</p>
-				{#if currentInteractions != null}
+				{#if interactionsByMedicine != null && currentInteractions != null}
 					<h2>Interactions</h2>
-					<Accordion.Root class="w-full">
-						{#each currentInteractions as interaction}
-							<Accordion.Item value="item-1">
-								<Accordion.Trigger>
-									<span>Severity: {interaction.severity}</span>
-									<span>{interaction.description}</span>
-								</Accordion.Trigger>
-								<Accordion.Content>
-									{#each interaction.pairs as pair}
-										<p>
-											<b class="capitalize">{pair[0].name}</b> ⇔
-											<b class="capitalize">{pair[1].name}</b>
-										</p>
-									{/each}
-								</Accordion.Content>
-							</Accordion.Item>
+					<div class="flex flex-col gap-4">
+						{#each [...interactionsByMedicine] as [medicineInfo, interactions]}
+							<Card.Root>
+								<Card.Header>
+									<Card.Title>{medicineInfo.name}</Card.Title>
+								</Card.Header>
+								<Card.Content>
+									<Accordion.Root class="w-full">
+										{#each interactions.list as interaction}
+											<Accordion.Item value={interaction.description}>
+												<Accordion.Trigger>
+													<span class:text-red-500={interaction.severity.toLowerCase() == 'high'}
+														>Severity: {interaction.severity}</span
+													>
+													<span>{interaction.description}</span>
+												</Accordion.Trigger>
+												<Accordion.Content>
+													{#each interaction.pairs as pair}
+														<p>
+															<b class="capitalize">{pair[0].name}</b> ⇔
+															<b class="capitalize">{pair[1].name}</b>
+														</p>
+													{/each}
+												</Accordion.Content>
+											</Accordion.Item>
+										{/each}
+									</Accordion.Root>
+								</Card.Content>
+							</Card.Root>
 						{/each}
-					</Accordion.Root>
+						{#if hasSevereInteraction}
+							<p>
+								<b
+									>DANGER: Consuming this medication can cause potentially deadly drug interactions.</b
+								>
+							</p>
+
+							<p>
+								To continue, confirm that you are no longer taking any conflicting medicine by
+								deleting all medicine with severe interactions.
+							</p>
+						{/if}
+					</div>
 				{:else}
 					<p>Analyzing interactions...</p>
 				{/if}
@@ -222,7 +290,8 @@
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action>Continue</AlertDialog.Action>
+			<Button>Remove items</Button>
+			<AlertDialog.Action disabled={hasSevereInteraction}>Continue</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
