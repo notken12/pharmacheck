@@ -80,7 +80,7 @@
 
 <style>
 	.videoContainer {
-		max-height: 400px;
+		max-height: 500px;
 		display: flex;
 		overflow: hidden;
 	}
