@@ -1,2 +1,8 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script lang="ts">
+	import Scanner from '$lib/components/Scanner.svelte';
+</script>
+
+<h1>Welcome to Medication Scanner</h1>
+<p>Scan your medication here</p>
+<Scanner></Scanner>
+
