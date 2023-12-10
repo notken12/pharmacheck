@@ -14,26 +14,28 @@
 <div class="flex flex-col gap-4">
 	{#if $userData}
 		{#if $userData.scanHistory.length > 0}
-			<h2 class="text-2xl font-bold">Recently scanned</h2>
+			<h2 class="text-2xl font-bold text-center mt-4">Recently scanned</h2>
 		{/if}
 		{#each $userData.scanHistory as scanRecord}
 			<Card.Root>
-				<Card.Header>
-					<Card.Title
-						>{scanRecord.medicineInfo.name} ({scanRecord.medicineInfo.ingredients
-							.map((a) => a.name)
-							.join(', ')})</Card.Title
-					>
-					<Card.Description
-						>Scanned at {new Date(scanRecord.timestamp).toISOString()}</Card.Description
+				<Card.Header class="flex flex-row justify-between items-center gap-4">
+					<div class="flex flex-col gap-2">
+						<Card.Title
+							>{scanRecord.medicineInfo.name} ({scanRecord.medicineInfo.ingredients
+								.map((a) => a.name)
+								.join(', ')})</Card.Title
+						>
+						<Card.Description
+							>Scanned at {new Date(scanRecord.timestamp).toISOString()}</Card.Description
+						>
+					</div>
+					<Button
+						style="margin:0;"
+						size="icon"
+						variant="outline"
+						on:click={() => deleteRecord(scanRecord)}><X class="h-4 w-4"></X></Button
 					>
 				</Card.Header>
-				<!-- <Card.Content>
-          <p>Card Content</p>
-        </Card.Content> -->
-				<Card.Footer>
-					<Button on:click={() => deleteRecord(scanRecord)}><X class="h-4 w-4"></X></Button>
-				</Card.Footer>
 			</Card.Root>
 		{/each}
 	{/if}

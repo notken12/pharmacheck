@@ -61,6 +61,7 @@
 	) => {
 		medicineInfoDialogOpen = false;
 		if (!medicineInfoRes) return;
+		interactionsDialogOpen = false;
 		interactionsDialogOpen = true;
 		const ingredients: Ingredient[] = [];
 
