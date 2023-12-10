@@ -5,9 +5,11 @@
 	import store from 'store';
 	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
-	import { History } from 'lucide-svelte';
+	import { History, Info } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import ScanHistory from '$lib/components/ScanHistory.svelte';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { Label } from '$lib/components/ui/label';
 
 	onMount(() => {
 		let storedUserData = store.get('userData');
@@ -39,4 +41,22 @@
 	<p class="text-muted-foreground">Made by Ken Z. and Benja H. at 📍Hack the Nest</p>
 	<Scanner></Scanner>
 	<ScanHistory></ScanHistory>
+	<Dialog.Root>
+		<Dialog.Trigger>
+			<Button size="icon" variant="outline" class="fixed right-[16px] top-[16px]" aria-label="Info"
+				><Info class="w-4 h-4"></Info></Button
+			>
+		</Dialog.Trigger>
+		<Dialog.Content class="sm:max-w-[425px]">
+			<Dialog.Header>
+				<Dialog.Title>About PharmaCheck</Dialog.Title>
+			</Dialog.Header>
+			<div class="grid gap-4 py-4">
+				<p>
+					Libraries used: SvelteKit, Tesseract.js (OCR), OpenAI Chat Completions (Extract
+					information from OCR text), NIH Drug Interaction API.
+				</p>
+			</div>
+		</Dialog.Content>
+	</Dialog.Root>
 </main>
