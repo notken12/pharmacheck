@@ -61,6 +61,19 @@
 		});
 		userData.set($userData);
 		saveUserData($userData);
+
+		const ingredientIds = getPastIngredientIds();
+		console.log(ingredientIds);
+	};
+
+	let getPastIngredientIds = () => {
+		const ingredientIds: string[] = [];
+		for (const record of $userData.scanHistory) {
+			for (const ingredient of record.medicineInfo.ingredients) {
+				ingredientIds.push(ingredient.rxNormId);
+			}
+		}
+		return ingredientIds;
 	};
 
 	let resultText = '';

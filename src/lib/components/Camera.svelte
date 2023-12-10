@@ -62,19 +62,18 @@
 	};
 </script>
 
-<div class="videoContainer" style:aspect-ratio={videoWidth / videoHeight}>
+<div class="videoContainer rounded-lg" style:aspect-ratio={videoWidth / videoHeight}>
 	<video
 		bind:this={videoEl}
 		width={videoWidth}
 		height={videoHeight}
 		on:loadedmetadata={videoUpdated}
-		class:hidden={pictureTaken}
 		muted
 		playsinline
 		autoplay
 	></video>
 
-	<canvas bind:this={pictureResultEl} />
+	<canvas bind:this={pictureResultEl} class="hidden" />
 </div>
 
 <p>{videoWidth} x {videoHeight}</p>
@@ -83,5 +82,6 @@
 	.videoContainer {
 		max-height: 400px;
 		display: flex;
+		overflow: hidden;
 	}
 </style>
