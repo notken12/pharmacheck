@@ -40,10 +40,12 @@
 
 		for (const ingredient of medicineInfoResponse.ingredients) {
 			const response = await fetch(
-				'https://rxnav.nlm.nih.gov/REST/rxcui.xml?' +
-					new URLSearchParams({ name: ingredient, search: '2', format: '.json' })
+				'https://rxnav.nlm.nih.gov/REST/rxcui.json?' +
+					new URLSearchParams({ name: ingredient, search: '2' })
 			);
 			const data = await response.json();
+
+			if (!data.idGroup?.rxnormId || !data.idGroup.rxnormId[0]) continue;
 
 			ingredients.push({
 				name: ingredient,
@@ -65,38 +67,40 @@
 		userData.set($userData);
 		saveUserData($userData);
 
-		const ingredientIds = getPastIngredientIds().join();
+		const ingredientIds = getPastIngredientIds().join(' ');
 		console.log(ingredientIds);
 
 		const interaction = await fetch(
-			'https://rxnav.nlm.nih.gov/REST/interaction/list.xml?' +
-				new URLSearchParams({ format: '.json', rxcuis: ingredientIds })
+			'https://rxnav.nlm.nih.gov/REST/interaction/list.json?' +
+				new URLSearchParams({ rxcuis: ingredientIds })
 		);
 		const resObject = await interaction.json();
 		const interactions: Interaction[] = [];
 
-		for (const interactionGroup of resObject.fullInteractionTypeGroup) {
-			for (const interactionType of interactionGroup.fullInteractionType) {
-				const { severity, description } = interactionType.interactionPair[0];
-				const interaction: Interaction = {
-					severity: severity,
-					description: description,
-					pairs: []
-				};
-				for (const pair of interactionType.interactionPair) {
-					//interactionPair: interactions between different drugs that result in the same effect
-					interaction.pairs.push(
-						pair.interactionConcept.map(
-							(c: { minConceptItem: { name: string; rxcui: string } }) => {
-								return {
-									name: c.minConceptItem.name,
-									rxNormId: c.minConceptItem.rxcui
-								};
-							}
-						)
-					);
+		if (Array.isArray(resObject.fullInteractionTypeGroup)) {
+			for (const interactionGroup of resObject.fullInteractionTypeGroup) {
+				for (const interactionType of interactionGroup.fullInteractionType) {
+					const { severity, description } = interactionType.interactionPair[0];
+					const interaction: Interaction = {
+						severity: severity,
+						description: description,
+						pairs: []
+					};
+					for (const pair of interactionType.interactionPair) {
+						//interactionPair: interactions between different drugs that result in the same effect
+						interaction.pairs.push(
+							pair.interactionConcept.map(
+								(c: { minConceptItem: { name: string; rxcui: string } }) => {
+									return {
+										name: c.minConceptItem.name,
+										rxNormId: c.minConceptItem.rxcui
+									};
+								}
+							)
+						);
+					}
+					interactions.push(interaction);
 				}
-				interactions.push(interaction);
 			}
 		}
 
