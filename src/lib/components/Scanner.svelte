@@ -9,18 +9,21 @@
 
 	let scanImage = () => {
 		camera.takePicture();
-		recognizeText();
+		const src = camera.getImageData();
+		const img = camera.getCanvas().toDataURL('image/png');
+		camera.reset();
+		recognizeText(img);
+	};
+
+	let scanFileInputImage = () => {
+		recognizeText(inputFiles[0]);
 	};
 
 	let camera: Camera;
 	let medicineInfoResponse: { name: string; ingredients: string[] };
 
-	let recognizeText = async () => {
-		const src = camera.getImageData();
+	let recognizeText = async (img: Tesseract.ImageLike) => {
 		let worker = await Tesseract.createWorker();
-		const img = camera.getCanvas().toDataURL('image/png');
-		camera.reset();
-
 		let result = await worker.recognize(
 			img,
 			{},
@@ -62,19 +65,48 @@
 		userData.set($userData);
 		saveUserData($userData);
 
-		const ingredientIds = getPastIngredientIds();
+		const ingredientIds = getPastIngredientIds().join();
 		console.log(ingredientIds);
 
-		ingredientIds.join(' ');
 		const interaction = await fetch(
-			'https://rxnav.nlm.nih.gov/REST/interaction/list.xml?' + 
-				new URLSearchParams({format : '.json', rxcuis : ingredientIds})
+			'https://rxnav.nlm.nih.gov/REST/interaction/list.xml?' +
+				new URLSearchParams({ format: '.json', rxcuis: ingredientIds })
 		);
 		const resObject = await interaction.json();
+		const interactions: Interaction[] = [];
 
-		for(const interationTypeGroup of resObject.fullInteractionTypeGroup) {
-			for(const interactionType of interactionTypeGroup.full)
+		for (const interactionGroup of resObject.fullInteractionTypeGroup) {
+			for (const interactionType of interactionGroup.fullInteractionType) {
+				const { severity, description } = interactionType.interactionPair[0];
+				const interaction: Interaction = {
+					severity: severity,
+					description: description,
+					pairs: []
+				};
+				for (const pair of interactionType.interactionPair) {
+					//interactionPair: interactions between different drugs that result in the same effect
+					interaction.pairs.push(
+						pair.interactionConcept.map(
+							(c: { minConceptItem: { name: string; rxcui: string } }) => {
+								return {
+									name: c.minConceptItem.name,
+									rxNormId: c.minConceptItem.rxcui
+								};
+							}
+						)
+					);
+				}
+				interactions.push(interaction);
+			}
 		}
+
+		console.log(interactions);
+	};
+
+	type Interaction = {
+		severity: string;
+		description: string;
+		pairs: Ingredient[][]; // list of pairs of ingredients
 	};
 
 	let getPastIngredientIds = () => {
@@ -93,7 +125,16 @@
 	let trigger: string;
 
 	let medicineInfoDialogOpen = false;
+
+	let inputFiles: FileList;
 </script>
+
+<input
+	bind:files={inputFiles}
+	on:change={scanFileInputImage}
+	type="file"
+	accept="image/png;capture=camera"
+/>
 
 <Camera bind:this={camera}></Camera>
 <Button on:click={scanImage}>Scan</Button>
