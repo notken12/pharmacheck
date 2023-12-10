@@ -93,16 +93,15 @@
 					};
 					for (const pair of interactionType.interactionPair) {
 						//interactionPair: interactions between different drugs that result in the same effect
-						interaction.pairs.push(
-							pair.interactionConcept.map(
-								(c: { minConceptItem: { name: string; rxcui: string } }) => {
-									return {
-										name: c.minConceptItem.name,
-										rxNormId: c.minConceptItem.rxcui
-									};
-								}
-							)
+						const ingredientPair: Ingredient[] = pair.interactionConcept.map(
+							(c: { minConceptItem: { name: string; rxcui: string } }) => {
+								return {
+									name: c.minConceptItem.name,
+									rxNormId: c.minConceptItem.rxcui
+								};
+							}
 						);
+						interaction.pairs.push(ingredientPair);
 					}
 					interactions.push(interaction);
 				}
@@ -110,7 +109,18 @@
 		}
 
 		console.log(interactions);
-		currentInteractions = interactions;
+		const medicineIngredientIds = medicineInfo.ingredients.map((a) => a.rxNormId);
+		// interactions that involve the current medication being scanned
+		currentInteractions = interactions.filter((a) => {
+			for (const pair of a.pairs) {
+				for (const ingredient of pair) {
+					if (medicineIngredientIds.includes(ingredient.rxNormId)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		});
 	};
 
 	let currentInteractions: Interaction[] | null = null;
@@ -187,7 +197,7 @@
 				</p>
 				{#if currentInteractions != null}
 					<h2>Interactions</h2>
-					<Accordion.Root class="w-full sm:max-w-[70%]">
+					<Accordion.Root class="w-full">
 						{#each currentInteractions as interaction}
 							<Accordion.Item value="item-1">
 								<Accordion.Trigger>
