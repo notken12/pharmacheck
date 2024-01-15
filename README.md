@@ -2,7 +2,9 @@
 
 ## [Visit the Demo](http://pharma-check.vercel.app/)
 
-Built at Hack the Nest 2023 at Tysons, VA by Ken Zhou and Benjamin Habyarimana. Our app lets users scan medicine they are taking/planning to buy to check for potential drug interactions. We used Tesseract.js for OCR, OpenAI GPT-3.5 for text comprehension, and the NIH Drug Interaction API to query drug interactions from a medical database.
+![PharmaCheck Banner](https://github.com/notken12/medication-scanner/blob/main/PharmaCheckBanner.png?raw=true)
+
+Built at Hack the Nest 2023 at Tysons, VA by Ken Zhou and Benjamin Habyarimana. Our app lets users scan the Drug Facts label of medicine they are taking/planning to buy to check for potential drug interactions. We used Tesseract.js for OCR, OpenAI GPT-3.5 for text comprehension, and the NIH Drug Interaction API to query drug interactions from a medical database.
 
 # Inspiration
 When taking multiple medicines we often worry if they will conflict each other and cause harm. If doctors prescribe a drug without knowing or considering the medications a patient is currently taking, either by mistake or poor communication, there can be serious or even deadly side effects from drug interactions. This inspired us to make an app that lets users scan medicine they’re prescribed or shopping for to automatically check for interactions against the medication they’re taking.
